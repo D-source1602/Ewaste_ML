@@ -1,0 +1,684 @@
+/* ============================================================================
+   EcoCircuit — Base layer
+   Reset, typography, layout primitives, chrome (grain/cursor/progress/loader),
+   reveal choreography, and the global reduced-motion kill switch.
+   ========================================================================= */
+
+/* ── Reset ────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: -0.006em;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* The ambient wash sits behind every WebGL layer so a shader failure still
+   leaves a designed page rather than a black rectangle. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 90% at 78% -12%,
+      rgba(23, 201, 100, 0.16) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      90% 70% at 8% 104%,
+      rgba(13, 148, 136, 0.14) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, #060c11 0%, var(--night) 45%, #04080b 100%);
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--leaf);
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+::selection {
+  background: var(--leaf-gl2);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Firefox / WebKit scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(123, 241, 196, 0.22) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(123, 241, 196, 0.18);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 241, 196, 0.34);
+  background-clip: padding-box;
+}
+
+/* ── Typography ───────────────────────────────────────────────────────── */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.display {
+  font-size: clamp(2.35rem, 7.2vw, 5.1rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.h2 {
+  font-size: clamp(1.65rem, 3.6vw, 2.6rem);
+  letter-spacing: -0.035em;
+}
+
+.h3 {
+  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+  letter-spacing: -0.02em;
+}
+
+.grad-text {
+  background: var(--grad-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.lead {
+  font-size: clamp(0.95rem, 1.5vw, 1.09rem);
+  line-height: 1.72;
+  color: var(--ink2);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+
+.muted {
+  color: var(--ink2);
+}
+.faint {
+  color: var(--ink3);
+}
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
+.shell {
+  position: relative;
+  z-index: var(--z-content);
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+.wrap-narrow {
+  max-width: 780px;
+}
+.wrap-mid {
+  max-width: 980px;
+}
+
+.section {
+  position: relative;
+  padding-block: clamp(3.5rem, 9vw, 7.5rem);
+}
+
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 620px;
+  margin-bottom: clamp(2rem, 4vw, 3.25rem);
+}
+
+.section-head.center {
+  margin-inline: auto;
+  text-align: center;
+  align-items: center;
+}
+
+.rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--rim-neutral-hi) 22%,
+    var(--rim-neutral-hi) 78%,
+    transparent
+  );
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+.g2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.g3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.g4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.row-wrap {
+  flex-wrap: wrap;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1000px) {
+  .g4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .g3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 660px) {
+  .g2,
+  .g3,
+  .g4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Background layers ────────────────────────────────────────────────── */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-gl);
+  pointer-events: none;
+}
+
+.bg-layer canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Tint scrim over the WebGL layers. Sits below content (z-content) so it only
+   touches the atmosphere, never the UI. It is a center-clearing radial, not a
+   flat cover: the middle stays open so the animated gradient reads through on
+   every route, while the edges deepen so the page still holds a dark mood. The
+   shader palette itself is dark-dominant, so darkness comes from the colours,
+   not from hiding the layer. */
+.bg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-gl);
+  pointer-events: none;
+  background: radial-gradient(
+    130% 100% at 50% 36%,
+    rgba(3, 7, 10, 0.5) 0%,
+    rgba(3, 6, 9, 0.72) 55%,
+    rgba(2, 4, 6, 0.9) 100%
+  );
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-gl);
+  pointer-events: none;
+  background: radial-gradient(
+    120% 92% at 50% 42%,
+    transparent 32%,
+    rgba(2, 5, 7, 0.55) 78%,
+    rgba(1, 3, 4, 0.86) 100%
+  );
+}
+
+/* SVG-turbulence film grain — keeps large flat gradients from banding. */
+.grain {
+  position: fixed;
+  inset: -120%;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  opacity: 0.032;
+  mix-blend-mode: overlay;
+  animation: grain 7s steps(6) infinite;
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  17% {
+    transform: translate(-3%, -4%);
+  }
+  33% {
+    transform: translate(2%, -2%);
+  }
+  50% {
+    transform: translate(-2%, 3%);
+  }
+  67% {
+    transform: translate(3%, 2%);
+  }
+  83% {
+    transform: translate(-3%, 1%);
+  }
+}
+
+/* ── Custom cursor ────────────────────────────────────────────────────── */
+.cur,
+.cur-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-cursor);
+  pointer-events: none;
+  border-radius: 50%;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+
+.cur {
+  width: 7px;
+  height: 7px;
+  background: var(--mint);
+  margin: -3.5px 0 0 -3.5px;
+}
+
+.cur-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgba(123, 241, 196, 0.55);
+  transition: width 0.32s var(--ease), height 0.32s var(--ease),
+    margin 0.32s var(--ease), border-color 0.32s var(--ease);
+}
+
+.cur-ring.big {
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-color: rgba(123, 241, 196, 0.9);
+}
+
+@media (pointer: coarse) {
+  .cur,
+  .cur-ring {
+    display: none;
+  }
+}
+
+/* The custom cursor replaces the native one on precise pointers only — text
+   fields keep the system caret, because a hidden cursor makes typing feel
+   broken. */
+@media (hover: hover) and (pointer: fine) {
+  body {
+    cursor: none;
+  }
+
+  input,
+  textarea,
+  select {
+    cursor: auto;
+  }
+}
+
+/* ── Scroll progress ──────────────────────────────────────────────────── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: var(--z-progress);
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.scroll-progress i {
+  display: block;
+  height: 100%;
+  transform-origin: 0 50%;
+  background: var(--grad);
+  box-shadow: 0 0 12px rgba(23, 201, 100, 0.55);
+}
+
+/* ── Preloader ────────────────────────────────────────────────────────── */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-loader);
+  display: grid;
+  place-items: center;
+  background: #04080b;
+  transition: opacity 0.7s var(--ease), visibility 0.7s var(--ease);
+}
+
+.preloader.gone {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.preloader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.35rem;
+  width: min(78vw, 320px);
+}
+
+.preloader-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+
+.preloader-track {
+  position: relative;
+  width: 100%;
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.preloader-track i {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 50%;
+  background: var(--grad);
+}
+
+.preloader-pct {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  color: var(--ink3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Reveal choreography ──────────────────────────────────────────────────
+   Driven by an animation, not a transition, and deliberately so. `.rv` gets
+   composed onto elements that already carry their own `transition` shorthand
+   (`.card`, `.rail-card`, `.pill-row`), and a later shorthand replaces the
+   whole property list — so a transition-based reveal would be silently killed
+   by whichever component class happens to load last. Animations occupy a
+   separate channel and can't be clobbered that way.
+
+   The slide uses the independent `translate` property rather than `transform`.
+   An animation with `both` fill holds its end state forever and outranks author
+   declarations, so animating `transform` here would permanently defeat every
+   `:hover { transform: … }` in the component layer. `translate` composes with
+   `transform` instead of replacing it.
+   ────────────────────────────────────────────────────────────────────────── */
+.rv {
+  opacity: 0;
+}
+
+.rv.in {
+  animation: rv-in 0.85s var(--ease) both;
+}
+
+@keyframes rv-in {
+  from {
+    opacity: 0;
+    translate: 0 26px;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    translate: none;
+    filter: none;
+  }
+}
+
+/* ── Marquee ──────────────────────────────────────────────────────────── */
+.marquee {
+  position: relative;
+  overflow: hidden;
+  border-block: 1px solid var(--rim-neutral);
+  padding-block: 0.85rem;
+  background: rgba(255, 255, 255, 0.015);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 34s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-inline: 1.6rem;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+
+.marquee-item b {
+  color: var(--leaf);
+  font-weight: 400;
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* ── Shared keyframes ─────────────────────────────────────────────────── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(23, 201, 100, 0.45);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 7px rgba(23, 201, 100, 0);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    /* Zeroing the durations alone is not enough: a staggered delay still plays
+       the sequence out over time, which is the effect being opted out of. */
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
+  }
+
+  .rv {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .grain {
+    animation: none;
+  }
+
+  .cur,
+  .cur-ring {
+    display: none;
+  }
+
+  body {
+    cursor: auto;
+  }
+}

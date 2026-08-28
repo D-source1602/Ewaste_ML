@@ -1,0 +1,102 @@
+/* ============================================================================
+   EcoCircuit — Design Tokens
+   Night-lab palette: deep carbon ground, leaf-green signal, teal support.
+   Every colour, radius, shadow and easing in the product resolves from here.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Ground ─────────────────────────────────────────────────────────── */
+  --night: #050a0e;
+  --n1: #080f15;
+  --n2: #0c161f;
+  --n3: #12212d;
+
+  /* ── Glass surfaces ─────────────────────────────────────────────────── */
+  --surf: rgba(255, 255, 255, 0.028);
+  --surf-hi: rgba(255, 255, 255, 0.055);
+  --surf-solid: #0e1a23;
+
+  /* ── Rims / strokes ─────────────────────────────────────────────────── */
+  --rim: rgba(123, 241, 196, 0.11);
+  --rim-hi: rgba(123, 241, 196, 0.28);
+  --rim-neutral: rgba(255, 255, 255, 0.08);
+  --rim-neutral-hi: rgba(255, 255, 255, 0.16);
+
+  /* ── Signal colours ─────────────────────────────────────────────────── */
+  --leaf: #17c964;
+  --leaf-lo: #0fa854;
+  --leaf-hi: #3df08a;
+  --mint: #7bf1c4;
+  --teal: #0d9488;
+  --amber: #f5a524;
+  --rose: #f43f5e;
+  --blue: #4c8dff;
+
+  /* ── Signal glows ───────────────────────────────────────────────────── */
+  --leaf-gl: rgba(23, 201, 100, 0.1);
+  --leaf-gl2: rgba(23, 201, 100, 0.2);
+  --teal-gl: rgba(13, 148, 136, 0.12);
+  --amber-gl: rgba(245, 165, 36, 0.1);
+  --rose-gl: rgba(244, 63, 94, 0.1);
+  --blue-gl: rgba(76, 141, 255, 0.1);
+
+  /* ── Ink ────────────────────────────────────────────────────────────── */
+  --ink: #f1f8f4;
+  --ink2: #c0d2ca;
+  --ink3: #8a9d94;
+  --ink4: #3a4a45;
+
+  /* ── Gradient ───────────────────────────────────────────────────────── */
+  --grad: linear-gradient(115deg, var(--mint), var(--leaf) 45%, var(--teal));
+  --grad-text: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    var(--mint) 42%,
+    rgba(238, 247, 241, 0.62) 100%
+  );
+
+  /* ── Flux progress bar (login/analysis loaders) ─────────────────────── */
+  --flux-from: #0fa854;
+  --flux-to: #7bf1c4;
+
+  /* ── Radii ──────────────────────────────────────────────────────────── */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r: 13px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --r-pill: 999px;
+
+  /* ── Type ───────────────────────────────────────────────────────────── */
+  --font: 'Sora', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  /* ── Shadows ────────────────────────────────────────────────────────── */
+  --sh-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 18px 48px -24px rgba(0, 0, 0, 0.9);
+  --sh-lift: 0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 32px 72px -28px rgba(0, 0, 0, 0.95), 0 0 0 1px var(--rim-hi);
+  --sh-glow: 0 0 44px rgba(23, 201, 100, 0.18), 0 0 120px rgba(23, 201, 100, 0.07);
+
+  /* ── Motion ─────────────────────────────────────────────────────────── */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.22, 0.68, 0, 1.2);
+
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  --pad: clamp(1.15rem, 5vw, 6rem);
+  --maxw: 1240px;
+  --nav-h: 68px;
+
+  /* ── Z-index scale ──────────────────────────────────────────────────── */
+  --z-bg: 0;
+  --z-gl: 1;
+  --z-grain: 2;
+  --z-content: 3;
+  --z-nav: 40;
+  --z-progress: 50;
+  --z-cursor: 60;
+  --z-loader: 100;
+}

@@ -1,0 +1,1485 @@
+/* ============================================================================
+   EcoCircuit — UI layer
+   Buttons, inputs, the flux progress bar, navigation, glass cards, badges,
+   tables and form chrome. Everything here is presentation-only; behaviour
+   lives in the matching .tsx component.
+   ========================================================================= */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PEARL BUTTON — primary call to action
+   Skeuomorphic pearl: four stacked inset shadows fake a domed, lit surface,
+   two pseudo-elements add the rim bloom and the top gloss, and the label is
+   masked so it fades into the dome instead of sitting flat on top of it.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.pearl {
+  position: relative;
+  display: inline-block;
+  padding: 2px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: linear-gradient(to bottom, #0d1a14, #14261c);
+  transform-style: preserve-3d;
+  box-shadow: inset 0 0.3rem 0.9rem rgba(123, 241, 196, 0.3),
+    inset 0 -0.1rem 0.3rem rgba(0, 0, 0, 0.7),
+    inset 0 -0.4rem 0.9rem rgba(123, 241, 196, 0.42),
+    0 2.4rem 2.6rem rgba(0, 0, 0, 0.34),
+    0 0.9rem 1rem -0.6rem rgba(0, 0, 0, 0.8);
+  transition: transform 400ms cubic-bezier(0.2, 0.6, 0.35, 1.1),
+    box-shadow 400ms var(--ease);
+  isolation: isolate;
+}
+
+.pearl::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -100% -15% 25%;
+  border-radius: 50%;
+  background: rgba(123, 241, 196, 0.12);
+  filter: blur(6px);
+}
+
+.pearl::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 12% 6% 40%;
+  border-radius: 22px 22px 0 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0)
+  );
+  box-shadow: inset 0 0.15rem 0.4rem rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.pearl:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0.3rem 0.9rem rgba(123, 241, 196, 0.42),
+    inset 0 -0.1rem 0.3rem rgba(0, 0, 0, 0.7),
+    inset 0 -0.4rem 0.9rem rgba(123, 241, 196, 0.55),
+    0 2.8rem 3rem rgba(0, 0, 0, 0.38),
+    0 1.1rem 1.2rem -0.6rem rgba(0, 0, 0, 0.85),
+    0 0 34px rgba(23, 201, 100, 0.28);
+}
+
+.pearl:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: inset 0 0.2rem 0.6rem rgba(123, 241, 196, 0.2),
+    inset 0 -0.1rem 0.3rem rgba(0, 0, 0, 0.8),
+    inset 0 0.4rem 0.9rem rgba(0, 0, 0, 0.5),
+    0 0.4rem 0.6rem rgba(0, 0, 0, 0.6);
+}
+
+.pearl:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.pearl-face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 13px 32px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    to bottom,
+    rgba(23, 201, 100, 0.14),
+    rgba(13, 148, 136, 0.06)
+  );
+  font-size: 0.94rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #f2fff8;
+  -webkit-mask-image: linear-gradient(to bottom, white 44%, rgba(255, 255, 255, 0.86));
+  mask-image: linear-gradient(to bottom, white 44%, rgba(255, 255, 255, 0.86));
+  white-space: nowrap;
+}
+
+.pearl-sm .pearl-face {
+  padding: 9px 20px;
+  font-size: 0.84rem;
+}
+
+.pearl-lg .pearl-face {
+  padding: 16px 40px;
+  font-size: 1.02rem;
+}
+
+.pearl-block {
+  display: block;
+  width: 100%;
+}
+.pearl-block .pearl-face {
+  width: 100%;
+}
+
+/* Sparkle pair: idle glyph fades out and the richer glyph fades in on hover. */
+.pearl-spark {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1em;
+  font-size: 1.05em;
+  color: var(--mint);
+}
+
+.pearl-spark span {
+  position: absolute;
+  transition: opacity 0.35s var(--ease), transform 0.45s var(--ease);
+}
+
+.pearl-spark .s1 {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+.pearl-spark .s2 {
+  opacity: 0;
+  transform: scale(0.5) rotate(-90deg);
+}
+
+.pearl:hover .pearl-spark .s1 {
+  opacity: 0;
+  transform: scale(0.5) rotate(90deg);
+}
+.pearl:hover .pearl-spark .s2 {
+  opacity: 1;
+  transform: scale(1.1) rotate(0deg);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   INTERACTIVE HOVER BUTTON
+   A 2px dot parked at 20%/40% inflates to flood the pill while the resting
+   label slides right and the arrow label slides in from the right.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.ihb {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 9.5rem;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid var(--rim-hi);
+  border-radius: var(--r-pill);
+  background: var(--surf);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  isolation: isolate;
+}
+
+.ihb-dot {
+  position: absolute;
+  left: 20%;
+  top: 40%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--leaf);
+  z-index: -1;
+  transition: transform 0.42s var(--ease);
+  will-change: transform;
+}
+
+.ihb:hover .ihb-dot {
+  transform: scale(26);
+}
+
+.ihb-rest,
+.ihb-hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  transition: transform 0.32s var(--ease), opacity 0.32s var(--ease);
+}
+
+.ihb-rest {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.ihb-hover {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+  transform: translateX(2.6rem);
+  opacity: 0;
+  color: #04120a;
+  font-weight: 600;
+}
+
+.ihb:hover .ihb-rest {
+  transform: translateX(2.6rem);
+  opacity: 0;
+}
+
+.ihb:hover .ihb-hover {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SECONDARY / QUIET BUTTONS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.66rem 1.1rem;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r-pill);
+  background: var(--surf);
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: border-color 0.28s var(--ease), background 0.28s var(--ease),
+    transform 0.28s var(--ease), color 0.28s var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--rim-hi);
+  background: var(--surf-hi);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.btn-sm {
+  padding: 0.46rem 0.85rem;
+  font-size: 0.78rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink2);
+  padding-inline: 0.5rem;
+}
+
+.btn-quiet:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surf);
+  border-color: transparent;
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--ink2);
+  transition: color 0.24s var(--ease), gap 0.24s var(--ease);
+}
+
+.btn-link:hover {
+  color: var(--mint);
+  gap: 0.6rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   APP INPUT
+   Two 2px bars track the pointer: a radial gradient centred on the cursor
+   lights the border only where the pointer is, top and bottom.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+}
+
+.field-label {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.field-shell {
+  position: relative;
+  border-radius: var(--r);
+  background: rgba(255, 255, 255, 0.022);
+  overflow: hidden;
+  transition: background 0.3s var(--ease);
+}
+
+.field-shell:focus-within {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.field-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0;
+  transition: opacity 0.34s var(--ease);
+  pointer-events: none;
+}
+
+.field-bar.top {
+  top: 0;
+}
+.field-bar.bottom {
+  bottom: 0;
+}
+
+.field-shell:hover .field-bar,
+.field-shell:focus-within .field-bar {
+  opacity: 1;
+}
+
+.field-input {
+  width: 100%;
+  padding: 0.82rem 0.95rem;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r);
+  background: transparent;
+  font-size: 0.9rem;
+  color: var(--ink);
+  transition: border-color 0.3s var(--ease);
+}
+
+.field-input::placeholder {
+  color: var(--ink4);
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--rim-hi);
+}
+
+.field-icon {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-xs);
+  color: var(--ink3);
+  transition: color 0.24s var(--ease), background 0.24s var(--ease);
+}
+
+.field-icon:hover {
+  color: var(--mint);
+  background: var(--surf-hi);
+}
+
+.field-input.has-icon {
+  padding-right: 2.6rem;
+}
+
+.select {
+  width: 100%;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r);
+  background: var(--n2);
+  font-size: 0.9rem;
+  color: var(--ink);
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink3) 50%),
+    linear-gradient(135deg, var(--ink3) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  transition: border-color 0.3s var(--ease);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--rim-hi);
+}
+
+/* ── Choice button (segmented picks: sell mode, warranty status) ────────── */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r);
+  background: var(--n2);
+  color: var(--ink);
+  transition: border-color 0.28s var(--ease), background 0.28s var(--ease),
+    box-shadow 0.28s var(--ease);
+}
+
+.choice:hover {
+  border-color: var(--rim-hi);
+  background: var(--n3);
+}
+
+.choice b {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.choice-on {
+  border-color: var(--leaf);
+  background: linear-gradient(
+    135deg,
+    rgba(23, 201, 100, 0.14),
+    rgba(13, 148, 136, 0.08)
+  );
+  box-shadow: var(--sh-glow);
+}
+
+.choice-on .tile {
+  color: var(--leaf);
+  border-color: var(--rim-hi);
+}
+
+.range {
+  width: 100%;
+  height: 4px;
+  border-radius: 99px;
+  appearance: none;
+  background: linear-gradient(
+    90deg,
+    var(--leaf) var(--fill, 20%),
+    rgba(255, 255, 255, 0.09) var(--fill, 20%)
+  );
+  cursor: pointer;
+}
+
+.range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--leaf-hi);
+  border: 3px solid #04120a;
+  box-shadow: 0 0 0 4px rgba(23, 201, 100, 0.16);
+  cursor: grab;
+}
+
+.range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--leaf-hi);
+  border: 3px solid #04120a;
+  box-shadow: 0 0 0 4px rgba(23, 201, 100, 0.16);
+  cursor: grab;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FLUX PROGRESS BAR
+   Gradient fill + a sheen that sweeps continuously, under a label stage where
+   each phase change flies the new words in from depth, letter by letter.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.flux {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.flux-stage {
+  position: relative;
+  height: 1.55rem;
+  perspective: 1000px;
+  overflow: hidden;
+}
+
+.flux-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  animation: flux-z 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-style: preserve-3d;
+}
+
+.flux-char {
+  display: inline-block;
+  white-space: pre;
+  animation: flux-char 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.flux-track {
+  position: relative;
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.flux-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 99px;
+  background: linear-gradient(
+    90deg,
+    var(--flux-from) 0%,
+    color-mix(in oklab, var(--flux-from), var(--flux-to)) 35%,
+    color-mix(in oklab, var(--flux-from) 22%, var(--flux-to)) 78%,
+    var(--flux-to) 100%
+  );
+  box-shadow: 0 0 16px rgba(23, 201, 100, 0.45);
+  transition: width 0.28s var(--ease-io);
+  overflow: hidden;
+}
+
+.flux-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 42%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  animation: flux-sheen 1.6s linear infinite;
+}
+
+.flux-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--ink3);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes flux-z {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) translateZ(-380px) scale(0.65);
+    filter: blur(14px);
+  }
+  62% {
+    opacity: 1;
+    transform: perspective(1000px) translateZ(60px) scale(1.06);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) translateZ(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes flux-char {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes flux-sheen {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(210%);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-nav);
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-inline: clamp(1rem, 4vw, 2.6rem);
+  transform: translateY(-70px);
+  opacity: 0;
+  transition: transform 0.9s var(--ease), opacity 0.9s var(--ease),
+    background 0.45s var(--ease), border-color 0.45s var(--ease),
+    backdrop-filter 0.45s var(--ease);
+  border-bottom: 1px solid transparent;
+}
+
+/* A permanent top-fade so the bar stays legible over the animated background
+   even before the page scrolls — it reads as light spilling from the top edge,
+   not a hard bar, so the hero still shows through. */
+.nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 7, 10, 0.82) 0%,
+    rgba(3, 7, 10, 0.45) 55%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(180deg, #000 40%, transparent);
+  mask: linear-gradient(180deg, #000 40%, transparent);
+}
+
+.nav.in {
+  transform: none;
+  opacity: 1;
+}
+
+.nav.solid {
+  background: rgba(6, 12, 16, 0.82);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border-bottom-color: var(--rim-hi);
+  box-shadow: 0 18px 44px -30px rgba(0, 0, 0, 0.9);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--mono);
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  margin-right: auto;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.55);
+}
+
+.nav-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--leaf);
+  box-shadow: 0 0 0 3px rgba(23, 201, 100, 0.22),
+    0 0 16px 2px rgba(23, 201, 100, 0.85);
+  animation: pulse-dot 2.4s var(--ease-io) infinite;
+  flex-shrink: 0;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 4px;
+  border: 1px solid var(--rim-hi);
+  border-radius: var(--r-pill);
+  background: rgba(8, 16, 20, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.nav-link {
+  position: relative;
+  padding: 0.46rem 1rem;
+  border-radius: var(--r-pill);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: color 0.3s var(--ease), background 0.3s var(--ease);
+}
+
+.nav-link:hover {
+  color: #ffffff;
+  background: rgba(23, 201, 100, 0.14);
+}
+
+.nav-link.active {
+  color: #04120a;
+  background: var(--grad);
+  font-weight: 700;
+  box-shadow: 0 6px 18px -8px rgba(23, 201, 100, 0.8);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.nav-burger {
+  display: none;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--rim-hi);
+  border-radius: var(--r-sm);
+  background: rgba(8, 16, 20, 0.6);
+  color: #ffffff;
+}
+
+@media (max-width: 900px) {
+  .nav-links {
+    display: none;
+  }
+  .nav-burger {
+    display: grid;
+  }
+  .nav-actions {
+    display: none;
+  }
+}
+
+.drawer {
+  position: fixed;
+  inset: var(--nav-h) 0 auto 0;
+  z-index: calc(var(--z-nav) - 1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.25rem clamp(1rem, 4vw, 2.6rem) 1.75rem;
+  background: rgba(6, 12, 16, 0.94);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border-bottom: 1px solid var(--rim-neutral);
+  animation: drawer-in 0.45s var(--ease) both;
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 0.3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink2);
+  text-align: left;
+  transition: color 0.24s var(--ease), padding-left 0.24s var(--ease);
+}
+
+.drawer-link:hover,
+.drawer-link.active {
+  color: var(--mint);
+  padding-left: 0.7rem;
+}
+
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLASS CARDS
+   --mx/--my are written by the tilt handler and drive the radial sheen, so
+   the highlight follows the pointer across the card face.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.card {
+  position: relative;
+  padding: 1.4rem 1.35rem;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r-lg);
+  /* Opaque dark base rather than a translucent white film: the card must read
+     dark and keep its near-white text legible no matter what the background
+     WebGL layer paints behind it. */
+  background: linear-gradient(180deg, rgba(15, 27, 36, 0.97), rgba(9, 17, 24, 0.97));
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+  transition: border-color 0.45s var(--ease), box-shadow 0.45s var(--ease),
+    background 0.45s var(--ease);
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+  background: radial-gradient(
+    440px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(123, 241, 196, 0.11),
+    transparent 62%
+  );
+}
+
+.card:hover::after {
+  opacity: 1;
+}
+
+.card-tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.5s var(--ease), border-color 0.45s var(--ease),
+    box-shadow 0.45s var(--ease);
+  will-change: transform;
+}
+
+/* Reveal wrapper for TiltCard. The wrapper owns the entrance transform and the
+   face owns the tilt transform, so neither transition fights the other; this
+   rule just makes the face fill the wrapper for equal-height grid rows. */
+.tilt-wrap {
+  display: flex;
+}
+
+.tilt-wrap > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-hover:hover {
+  border-color: var(--rim-hi);
+  box-shadow: var(--sh-lift);
+  background: linear-gradient(180deg, rgba(20, 34, 44, 0.98), rgba(12, 21, 29, 0.98));
+}
+
+.card-accent {
+  border-color: var(--rim-hi);
+  /* Green tint stacked over the same opaque dark base as .card, so the accent
+     reads as a wash on dark rather than a translucent film on the raw page. */
+  background:
+    linear-gradient(160deg, rgba(23, 201, 100, 0.1), rgba(13, 148, 136, 0.04)),
+    linear-gradient(180deg, rgba(15, 27, 36, 0.97), rgba(9, 17, 24, 0.97));
+}
+
+.card-flush {
+  padding: 0;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.card-body {
+  font-size: 0.83rem;
+  line-height: 1.66;
+  color: var(--ink2);
+}
+
+/* Icon tile used across feature/step/stat cards */
+.tile {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-sm);
+  background: var(--leaf-gl);
+  border: 1px solid var(--rim);
+  color: var(--leaf);
+}
+
+.tile-lg {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BADGES, STATS, TABLES
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.66rem;
+  border: 1px solid var(--rim);
+  border-radius: var(--r-pill);
+  background: var(--leaf-gl);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--leaf-hi);
+  white-space: nowrap;
+}
+
+.badge-teal {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: var(--teal-gl);
+  color: #6fded2;
+}
+.badge-amber {
+  border-color: rgba(245, 165, 36, 0.28);
+  background: var(--amber-gl);
+  color: #f8c46b;
+}
+.badge-rose {
+  border-color: rgba(244, 63, 94, 0.28);
+  background: var(--rose-gl);
+  color: #fb8fa2;
+}
+.badge-blue {
+  border-color: rgba(76, 141, 255, 0.28);
+  background: var(--blue-gl);
+  color: #93b8ff;
+}
+.badge-quiet {
+  border-color: var(--rim-neutral);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink2);
+}
+
+.stat-num {
+  font-family: var(--mono);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.stat-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ink2);
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  min-width: 620px;
+  font-size: 0.82rem;
+}
+
+.table th {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--rim-neutral);
+  background: rgba(255, 255, 255, 0.022);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--ink2);
+}
+
+.table tbody tr {
+  transition: background 0.24s var(--ease);
+}
+
+.table tbody tr:hover {
+  background: rgba(123, 241, 196, 0.035);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table .yes {
+  color: var(--leaf);
+  font-weight: 600;
+}
+.table .no {
+  color: var(--ink4);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STEPPERS, DROP ZONE, FEED
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.stepper {
+  display: flex;
+  align-items: flex-start;
+}
+
+.stepper-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: clamp(4.25rem, 17vw, 7rem);
+}
+
+.stepper-dot {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--rim-neutral-hi);
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--ink3);
+  background: var(--n1);
+  transition: all 0.4s var(--ease);
+}
+
+.stepper-dot.active {
+  border-color: var(--leaf);
+  color: var(--leaf-hi);
+  background: var(--leaf-gl);
+  box-shadow: 0 0 0 6px rgba(23, 201, 100, 0.1);
+}
+
+.stepper-dot.done {
+  border-color: var(--leaf);
+  background: var(--leaf);
+  color: #04120a;
+}
+
+.stepper-line {
+  flex: 1;
+  height: 2px;
+  min-width: 12px;
+  /* Half the dot's height, so the connector meets the dots on their centreline
+     while the cells stay top-aligned. */
+  margin-top: 17px;
+  background: var(--rim-neutral);
+  transition: background 0.5s var(--ease);
+}
+
+.stepper-line.done {
+  background: var(--leaf);
+}
+
+.stepper-label {
+  margin-top: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.61rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  text-align: center;
+}
+
+.stepper-label.on {
+  color: var(--leaf-hi);
+}
+
+.dropzone {
+  display: grid;
+  place-items: center;
+  gap: 0.6rem;
+  padding: 2.4rem 1.25rem;
+  border: 1.5px dashed var(--rim-neutral-hi);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.014);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+}
+
+.dropzone:hover,
+.dropzone.over {
+  border-color: var(--leaf);
+  background: var(--leaf-gl);
+}
+
+.feed-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+}
+
+.feed-item:last-child {
+  border-bottom: none;
+}
+
+.feed-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--leaf);
+  flex-shrink: 0;
+  animation: pulse-dot 2.6s var(--ease-io) infinite;
+}
+
+.stars {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--amber);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #f2fff8;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIFECYCLE INDICATOR — resale / recycle / end-of-life verdict
+   Colour comes in through the --lc / --lc-glow custom properties set per
+   status by the component, so one rule set styles all four levels.
+   ══════════════════════════════════════════════════════════════════════════ */
+.lifecycle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--rim-neutral);
+  border-left: 3px solid var(--lc, var(--leaf));
+  border-radius: var(--r);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.022),
+    rgba(255, 255, 255, 0.008)
+  );
+}
+
+.lifecycle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.lifecycle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.62rem;
+  border-radius: var(--r-pill);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lc, var(--leaf));
+  background: color-mix(in srgb, var(--lc, var(--leaf)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lc, var(--leaf)) 40%, transparent);
+  box-shadow: 0 0 18px -6px var(--lc-glow, transparent);
+}
+
+.lifecycle-verdict {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.lifecycle-meter {
+  position: relative;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.lifecycle-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--lc, var(--leaf)) 55%, transparent),
+    var(--lc, var(--leaf))
+  );
+  box-shadow: 0 0 12px -2px var(--lc-glow, transparent);
+  transition: width 0.6s var(--ease);
+}
+
+.lifecycle-detail {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--ink2);
+}
+
+.lifecycle-note {
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+/* ─── Data-security card ──────────────────────────────────────────────────────
+   Answers "what happens to my data?" beside the valuation. Colour is driven by
+   the wipe action via the --dw / --dw-glow custom properties the component sets
+   inline, so one rule set styles purge / reset / destroy / none. */
+.datawipe {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--r);
+  border: 1px solid var(--rim-neutral);
+  border-left: 3px solid var(--dw, var(--leaf));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.022),
+    rgba(255, 255, 255, 0.008)
+  );
+}
+
+.datawipe-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.datawipe-method {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.datawipe-chip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.62rem;
+  border-radius: var(--r-pill);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dw, var(--leaf));
+  background: color-mix(in srgb, var(--dw, var(--leaf)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dw, var(--leaf)) 40%, transparent);
+  box-shadow: 0 0 18px -6px var(--dw-glow, transparent);
+}
+
+.datawipe-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.15rem;
+}
+
+.datawipe-meta .spread {
+  font-size: 0.76rem;
+}
+
+.datawipe-meta .mono {
+  font-size: 0.72rem;
+  color: var(--ink2);
+}
+
+/* ─── Urban-mine metal chip ───────────────────────────────────────────────────
+   Element symbol tile for the materials-recovery breakdown; tinted per metal
+   via the --metal custom property the tile sets inline. */
+.metal-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--metal, var(--leaf));
+  background: color-mix(in srgb, var(--metal, var(--leaf)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--metal, var(--leaf)) 45%, transparent);
+  box-shadow: 0 0 20px -8px var(--metal, transparent);
+}
+
+/* ─── Nearby recyclers: real Leaflet/OSM map + result cards ──────────────────
+   The map fills a fixed-height rounded panel; cards are buttons so the whole
+   tile is a keyboard-focusable choice, selection driven by .is-selected. */
+.recycler-map {
+  width: 100%;
+  height: clamp(16rem, 42vh, 24rem);
+  border-radius: var(--r);
+  border: 1px solid var(--rim-neutral);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  z-index: 0;
+}
+
+/* Leaflet paints controls/popups above the map; keep them below the app chrome. */
+.recycler-map .leaflet-pane,
+.recycler-map .leaflet-top,
+.recycler-map .leaflet-bottom {
+  z-index: 1;
+}
+
+.recycler-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.15rem 1.25rem;
+  text-align: left;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.022),
+    rgba(255, 255, 255, 0.008)
+  );
+  cursor: pointer;
+  transition: border-color 0.28s var(--ease), transform 0.28s var(--ease),
+    background 0.28s var(--ease);
+}
+
+.recycler-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--rim);
+  background: var(--leaf-gl);
+}
+
+.recycler-card.is-selected {
+  border-color: var(--leaf);
+  background: var(--leaf-gl);
+  box-shadow: 0 0 0 1px var(--leaf) inset;
+}
+
+.recycler-card a {
+  color: var(--ink3);
+  text-decoration: none;
+}
+
+.recycler-card a:hover {
+  color: var(--leaf-hi);
+}
+
+/* ── Place picker + results grid ─────────────────────────────────────────────
+   The search bar lets anyone recentre on any Indian state/district/city; the
+   "Use my location" button switches back to the real device position. */
+.place-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.35rem 0.35rem 0.35rem 0.85rem;
+  border: 1px solid var(--rim-neutral);
+  border-radius: var(--r);
+  background: rgba(255, 255, 255, 0.028);
+  transition: border-color 0.28s var(--ease);
+}
+
+.place-bar:focus-within {
+  border-color: var(--leaf);
+}
+
+.place-bar-icon {
+  display: inline-flex;
+  color: var(--leaf-hi);
+  flex-shrink: 0;
+}
+
+.place-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.5rem 0;
+  outline: none;
+}
+
+.place-input::placeholder {
+  color: var(--ink3);
+}
+
+.place-go,
+.place-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.5rem 0.95rem;
+  border-radius: calc(var(--r) - 4px);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.24s var(--ease), border-color 0.24s var(--ease),
+    opacity 0.24s var(--ease);
+}
+
+.place-go {
+  border: none;
+  color: #04120a;
+  background: var(--leaf);
+}
+
+.place-go:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.place-loc {
+  border: 1px solid var(--rim);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.place-loc:hover {
+  background: var(--leaf-gl);
+  border-color: var(--leaf);
+}
+
+.recycler-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.85rem;
+}
+
+.recycler-icon {
+  display: inline-flex;
+  color: var(--leaf-hi);
+}
+
+
